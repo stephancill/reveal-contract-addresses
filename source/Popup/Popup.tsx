@@ -1,55 +1,35 @@
-import * as React from 'react';
-import {browser, Tabs} from 'webextension-polyfill-ts';
+import React, { useEffect } from 'react';
+import {browser} from 'webextension-polyfill-ts';
+import usePromise from '../hooks/usePromise';
+import { IAddress } from '../interfaces/IAddress';
+import { getHostFromURL } from '../utils';
 
 import './styles.scss';
 
-function openWebPage(url: string): Promise<Tabs.Tab> {
-  return browser.tabs.create({url});
+// function openWebPage(url: string): Promise<Tabs.Tab> {
+//   return browser.tabs.create({url});
+// }
+
+async function getAddresses(): Promise<IAddress[]> {
+  let activeTab = (await browser.tabs.query({active: true}))[0]
+  let host = getHostFromURL(activeTab.url || "")
+  const storage = await browser.storage.local.get([host])
+  const addresses = storage[host] as IAddress[]
+  return addresses
 }
 
-const Popup: React.FC = () => {
+export const Popup = () => {
+  const [addresses] = usePromise<IAddress[]>(getAddresses, [] )
+
+  useEffect(() => {
+
+  }, [addresses])
+  
   return (
     <section id="popup">
-      <h2>WEB-EXTENSION-STARTER</h2>
-      <button
-        id="options__button"
-        type="button"
-        onClick={(): Promise<Tabs.Tab> => {
-          return openWebPage('options.html');
-        }}
-      >
-        Options Page
-      </button>
-      <div className="links__holder">
-        <ul>
-          <li>
-            <button
-              type="button"
-              onClick={(): Promise<Tabs.Tab> => {
-                return openWebPage(
-                  'https://github.com/abhijithvijayan/web-extension-starter'
-                );
-              }}
-            >
-              GitHub
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              onClick={(): Promise<Tabs.Tab> => {
-                return openWebPage(
-                  'https://www.buymeacoffee.com/abhijithvijayan'
-                );
-              }}
-            >
-              Buy Me A Coffee
-            </button>
-          </li>
-        </ul>
-      </div>
+      {addresses && addresses.sort((a, b) => a.address > b.address ? -1 : 1).map(i => {
+        return <div key={i.address}>{i.address}</div>
+      })}
     </section>
   );
 };
-
-export default Popup;

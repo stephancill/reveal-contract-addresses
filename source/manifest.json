@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Sample WebExtension",
+  "name": "Show Contract Addresses",
   "version": "0.0.0",
 
   "icons": {
@@ -16,6 +16,7 @@
   "permissions": [
     "activeTab",
     "storage",
+    "webRequest",
     "http://*/*",
     "https://*/*"
   ],
@@ -59,8 +60,7 @@
   "background": {
     "scripts": [
       "js/background.bundle.js"
-    ],
-    "__chrome|opera__persistent": false
+    ]
   },
 
   "content_scripts": [{
