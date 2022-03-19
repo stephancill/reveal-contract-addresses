@@ -9,9 +9,9 @@
     "48": "assets/icons/favicon-48.png",
     "128": "assets/icons/favicon-128.png"
   },
-  "description": "Sample description",
+  "description": "Extension that reveals contract addresses referenced by dapps",
   "homepage_url": "https://github.com/abhijithvijayan/web-extension-starter",
-  "short_name": "Sample Name",
+  "short_name": "Contract Addresses",
 
   "permissions": [
     "activeTab",
@@ -23,15 +23,9 @@
 
   "content_security_policy": "script-src 'self'; object-src 'self'",
 
-  "__chrome|firefox__author": "abhijithvijayan",
+  "__chrome|firefox__author": "@stephancill",
   "__opera__developer": {
-    "name": "abhijithvijayan"
-  },
-
-  "__firefox__applications": {
-    "gecko": {
-      "id": "{754FB1AD-CC3B-4856-B6A0-7786F8CA9D17}"
-    }
+    "name": "@stephancill"
   },
 
   "__chrome__minimum_chrome_version": "49",
