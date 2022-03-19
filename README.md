@@ -1,7 +1,7 @@
 # Reveal Contracts
 Extension that reveals contract addresses referenced by dapps
 
-<img align="center" src="./screenshots/screenshot.jpg" width="400" >
+<img align="center" src="./screenshots/screenshot.png" width="400" >
 
 ## Quick Start
 
