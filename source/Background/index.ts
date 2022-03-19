@@ -1,11 +1,12 @@
 import {browser, WebRequest } from 'webextension-polyfill-ts';
 import {ethers} from "ethers"
-import { IAddress } from '../interfaces/IAddress';
+import { IAddressItem } from '../interfaces/IAddressItem';
 import { getHostFromURL } from '../utils';
 
 
 const loaded: {[key: string]: boolean} = {}
-const addresses: {[key: string]: IAddress[]} = {}
+const addresses: {[key: string]: IAddressItem[]} = {}
+const maxAddresses = 20 // TODO: Settings page
 
 function shouldIncludeAddress(address: string, initiator: string) {
   const isAddress = ethers.utils.isAddress(address)
@@ -33,8 +34,7 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
     if (!addresses[host]) {
       addresses[host] = []
     }
-    // if (!addresses[])
-    // console.log("loading", requestDetails.url)
+    
     const resp = await fetch(url)
     const blob = await resp.blob()
     const text = await blob.text()
@@ -44,10 +44,14 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
     while(lastIndex != -1) {
       // TODO: Detect context of address e.g. array or dictionary and have option to ignore contexts
       // TODO: Handle different chains
+      // TODO: Count occurances
       const addr = text.slice(lastIndex, lastIndex+42)
       if (shouldIncludeAddress(addr, host)) {
-        // console.log(host, addr, addresses[host].length)
+        console.log(host, addr, addresses[host].length)
         addresses[host].push({address: ethers.utils.getAddress(addr)})
+        if (addresses[host].length > maxAddresses) {
+          break
+        }
         browser.storage.local.set({[host]: addresses[host]})
       }
       lastIndex = text.indexOf("0x", lastIndex+1)
