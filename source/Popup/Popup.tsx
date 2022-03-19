@@ -36,13 +36,8 @@ const nameFetcherOptions: EnumDictionary<NameFetcher, INameFetcherOption> = {
 }
 
 async function getAddressesWithNames(): Promise<IAddressItem[]> {
-  let activeTab = (await browser.tabs.query({active: true}))[0]
-  let host = getHostFromURL(activeTab.url || "")
-  const storage = await browser.storage.local.get([host])
-  const addressItems = storage[host] as IAddressItem[]
-  console.log("addressItems", addressItems)
+  const addressItems = await getAddresses()
   const addressesWithNames = await getContractNames(addressItems)
-  console.log("addressesWithNames", addressesWithNames)
   return addressesWithNames
 }
 
@@ -62,11 +57,11 @@ async function promiseAllInBatches<T>(f: (...args: any[]) => Promise<T>, tasks: 
   let position = 0;
   let results: T[] = [];
   while (position < tasks.length) {
-      const itemsForBatch = tasks.slice(position, position + batchSize);
-      console.log("items", itemsForBatch.length)
-      const _results = [...results, ...await Promise.all([...itemsForBatch.map(item => f(item)), delay(delayMilliseconds)])];
-      results = _results.slice(0, _results.length-1) as T[]
-      position += batchSize;
+    console.log("position", position)
+    const itemsForBatch = tasks.slice(position, position + batchSize);
+    const _results = [...results, ...await Promise.all([...itemsForBatch.map(item => f(item)), delay(delayMilliseconds)])];
+    results = _results.slice(0, _results.length-1) as T[]
+    position += batchSize;
   }
   return results;
 }
@@ -77,7 +72,6 @@ async function getContractName(address: string): Promise<string | undefined>  {
   const res = await fetch(url)
   if (res.ok) {
     const json = await res.json()
-    console.log(json)
     return json.result[0].ContractName as string
   }
   return undefined
@@ -92,7 +86,6 @@ async function scrapeContractName(address: string): Promise<string | undefined> 
     if (title.includes(address)) {
       return undefined
     }
-    console.log(title)
     return title
   }
 
@@ -114,7 +107,7 @@ async function getContractNames(addressItems: IAddressItem[]): Promise<IAddressI
 
   const tasks = addressesWithoutNames.map(i => i.address)
 
-  const nameFetcherOption = nameFetcherOptions[NameFetcher.api] // TODO: Settings option
+  const nameFetcherOption = nameFetcherOptions[NameFetcher.scrape] // TODO: Settings option
 
   const contractNames = await promiseAllInBatches<string | undefined>(nameFetcherOption.nameFetcher, tasks, nameFetcherOption.requestsPerBatch, nameFetcherOption.batchDelayMilliseconds)
 
@@ -135,12 +128,9 @@ export const Popup = () => {
   const [addressesWithNames] = usePromise<IAddressItem[]>(getAddressesWithNames, [] )
 
   useEffect(() => {
-    console.log(addressItems)
-    if (addressItems && addressesWithNames) {
-    console.log(addressItems.length, addressesWithNames.length, (addressItems && addressItems.length === 0), addressesWithNames && addressesWithNames.length === 0)
-    }
+
   }, [addressItems, addressesWithNames])
-  
+  // TODO: Not displaying addresses with names immediately after first load
   return (
     <section id="popup">
       {!addressesWithNames ? addressItems && addressItems.sort((a, b) => (a.name || "") > (b.name || "") ? -1 : 1).map((i, index) => {
@@ -154,6 +144,7 @@ export const Popup = () => {
           return <AddressItem key={index} addressItem={i}/>
         })
     }
+    {!addressItems && <div>Something went wrong</div>}
     </section>
   );
 };

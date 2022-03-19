@@ -24,10 +24,19 @@ function shouldIncludeAddress(address: string, initiator: string) {
 }
 
 async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
-  const {url, initiator} = requestDetails
+  const {url, initiator, documentUrl} = requestDetails
 
-  if (!initiator) return
-  const host = getHostFromURL(initiator)
+  let host = ""
+
+  if (!initiator) {
+    if (!documentUrl) {
+      return
+    } else {
+      host = getHostFromURL(documentUrl)
+    }
+  } else {
+    host = getHostFromURL(initiator)
+  }
 
   if (!loaded[url]) {
     loaded[url] = true
@@ -38,6 +47,8 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
     const resp = await fetch(url)
     const blob = await resp.blob()
     const text = await blob.text()
+
+    console.log("hello", text.length)
 
     let lastIndex: number = text.indexOf("0x")
 
@@ -58,8 +69,6 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
     }
   }
 }
-
-// TODO: Fix firefox
 
 browser.webRequest.onCompleted.addListener(
   logURL,

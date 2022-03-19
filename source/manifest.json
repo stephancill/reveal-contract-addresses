@@ -17,8 +17,10 @@
     "activeTab",
     "storage",
     "webRequest",
+    "webRequestBlocking",
     "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "<all_urls>"
   ],
 
   "content_security_policy": "script-src 'self'; object-src 'self'",
@@ -26,6 +28,12 @@
   "__chrome|firefox__author": "@stephancill",
   "__opera__developer": {
     "name": "@stephancill"
+  },
+
+  "__firefox__applications": {
+    "gecko": {
+      "id": "{424fa9cf-6033-48a6-9b60-9c238966f4c1}"
+    }
   },
 
   "__chrome__minimum_chrome_version": "49",
