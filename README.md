@@ -1,4 +1,7 @@
-<h1 align="center">🚀 web-extension-starter</h1>
+<h1 align="center">Reveal Contract Addresses</h1>
+<div align="center">
+  <img src="./screenshots/screenshot.jpg"/>
+</div>
 <p align="center">Web Extension starter to build "Write Once Run on Any Browser" extension</p>
 <div align="center">
   <a href="https://travis-ci.com/abhijithvijayan/web-extension-starter">

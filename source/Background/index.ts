@@ -59,6 +59,8 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
   }
 }
 
+// TODO: Fix firefox
+
 browser.webRequest.onCompleted.addListener(
   logURL,
   {urls: ['*://*/*.js', '*://*/*.js?*', '*://*/*.json', '*://*/*.json?*']} // TODO: Parse HTML too
