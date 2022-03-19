@@ -61,6 +61,6 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
 
 browser.webRequest.onCompleted.addListener(
   logURL,
-  {urls: ['*://*/*.js', '*://*/*.js?*', '*://*/*.json', '*://*/*.json?*']}
+  {urls: ['*://*/*.js', '*://*/*.js?*', '*://*/*.json', '*://*/*.json?*']} // TODO: Parse HTML too
 )
 
