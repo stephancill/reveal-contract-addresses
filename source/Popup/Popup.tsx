@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import {browser} from 'webextension-polyfill-ts';
 import { AddressItem } from '../components/AddressItem';
 import usePromise from '../hooks/usePromise';
@@ -45,7 +45,8 @@ async function getAddresses(): Promise<IAddressItem[]> {
   let activeTab = (await browser.tabs.query({active: true}))[0]
   let host = getHostFromURL(activeTab.url || "")
   const storage = await browser.storage.local.get([host])
-  const addressItems = storage[host] as IAddressItem[]
+  let addressItems = storage[host] as IAddressItem[]
+  addressItems = addressItems.sort((a, b) => (a.name || "") > (b.name || "") ? -1 : 1)
   return addressItems
 }
 
@@ -105,10 +106,8 @@ async function getContractNames(addressItems: IAddressItem[]): Promise<IAddressI
     }
   })
 
-  const tasks = addressesWithoutNames.map(i => i.address)
-
   const nameFetcherOption = nameFetcherOptions[NameFetcher.scrape] // TODO: Settings option
-
+  const tasks = addressesWithoutNames.map(i => i.address)
   const contractNames = await promiseAllInBatches<string | undefined>(nameFetcherOption.nameFetcher, tasks, nameFetcherOption.requestsPerBatch, nameFetcherOption.batchDelayMilliseconds)
 
   const newAddressObjects: IAddressItem[] = addressesWithoutNames.map((i, index) => ({address: i.address, name: contractNames[index]}))
@@ -120,27 +119,30 @@ async function getContractNames(addressItems: IAddressItem[]): Promise<IAddressI
 
   await browser.storage.local.set(addressToName)
 
+  let activeTab = (await browser.tabs.query({active: true}))[0]
+  let host = getHostFromURL(activeTab.url || "")
+  await browser.storage.local.set({[host]: [...addressesWithNames, ...newAddressObjects]})
+
   return [...addressesWithNames, ...newAddressObjects]
 }
 
 export const Popup = () => {
   const [addressItems] = usePromise<IAddressItem[]>(getAddresses, [] )
   const [addressesWithNames] = usePromise<IAddressItem[]>(getAddressesWithNames, [] )
+  const [showAll, setShowAll] = useState(false)
 
-  useEffect(() => {
-
-  }, [addressItems, addressesWithNames])
   // TODO: Not displaying addresses with names immediately after first load
   return (
     <section id="popup">
-      {!addressesWithNames ? addressItems && addressItems.sort((a, b) => (a.name || "") > (b.name || "") ? -1 : 1).map((i, index) => {
+      <button onClick={() => setShowAll(!showAll)}>{showAll ? "Hide unnamed" : "Show all"}</button>
+      {!addressesWithNames ? addressItems && addressItems.map((i, index) => {
         return <AddressItem key={index} addressItem={i}/>
       })
       :
         addressesWithNames.filter(i => i.name).length === 0 ? 
         <div>No named addresses detected</div> 
         :
-        addressesWithNames.filter(i => i.name).sort((a, b) => (a.name || "") > (b.name || "") ? -1 : 1).map((i, index) => {
+        addressesWithNames.filter(i => i.name).map((i, index) => {
           return <AddressItem key={index} addressItem={i}/>
         })
     }

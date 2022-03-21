@@ -48,8 +48,6 @@ async function logURL(requestDetails: WebRequest.OnCompletedDetailsType) {
     const blob = await resp.blob()
     const text = await blob.text()
 
-    console.log("hello", text.length)
-
     let lastIndex: number = text.indexOf("0x")
 
     while(lastIndex != -1) {
