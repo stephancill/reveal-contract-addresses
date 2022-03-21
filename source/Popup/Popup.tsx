@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import {browser} from 'webextension-polyfill-ts';
+import React, { useEffect, useState } from 'react';
+import { browser } from 'webextension-polyfill-ts';
 import { AddressItem } from '../components/AddressItem';
 import usePromise from '../hooks/usePromise';
 import { IAddressItem } from '../interfaces/IAddressItem';
@@ -58,7 +58,7 @@ async function promiseAllInBatches<T>(f: (...args: any[]) => Promise<T>, tasks: 
   let position = 0;
   let results: T[] = [];
   while (position < tasks.length) {
-    console.log("position", position)
+    console.log("position", position, "/", tasks.length)
     const itemsForBatch = tasks.slice(position, position + batchSize);
     const _results = [...results, ...await Promise.all([...itemsForBatch.map(item => f(item)), delay(delayMilliseconds)])];
     results = _results.slice(0, _results.length-1) as T[]
@@ -67,14 +67,21 @@ async function promiseAllInBatches<T>(f: (...args: any[]) => Promise<T>, tasks: 
   return results;
 }
 
+async function saveContractName(address: string, name: string) {
+  await browser.storage.local.set({[address]: name})
+}
+
 // TODO: Update storage after each fetch, listen for changes
 async function getContractName(address: string): Promise<string | undefined>  {
   const url = `https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${address}&apikey=${""}`
   const res = await fetch(url)
   if (res.ok) {
     const json = await res.json()
-    return json.result[0].ContractName as string
+    const name = json.result[0].ContractName as string
+    await saveContractName(address, name)
+    return name
   }
+  await saveContractName(address, "")
   return undefined
 }
 
@@ -87,9 +94,11 @@ async function scrapeContractName(address: string): Promise<string | undefined> 
     if (title.includes(address)) {
       return undefined
     }
+    await saveContractName(address, title)
     return title
   }
 
+  await saveContractName(address, "")
   return undefined
 }
 
@@ -106,18 +115,11 @@ async function getContractNames(addressItems: IAddressItem[]): Promise<IAddressI
     }
   })
 
-  const nameFetcherOption = nameFetcherOptions[NameFetcher.scrape] // TODO: Settings option
+  const nameFetcherOption = nameFetcherOptions[NameFetcher.api] // TODO: Settings option
   const tasks = addressesWithoutNames.map(i => i.address)
   const contractNames = await promiseAllInBatches<string | undefined>(nameFetcherOption.nameFetcher, tasks, nameFetcherOption.requestsPerBatch, nameFetcherOption.batchDelayMilliseconds)
 
   const newAddressObjects: IAddressItem[] = addressesWithoutNames.map((i, index) => ({address: i.address, name: contractNames[index]}))
-
-  const addressToName: {[key: string]: string | undefined} = {}
-  newAddressObjects.forEach(i => {
-    addressToName[i.address] = i.name
-  })
-
-  await browser.storage.local.set(addressToName)
 
   let activeTab = (await browser.tabs.query({active: true}))[0]
   let host = getHostFromURL(activeTab.url || "")
@@ -127,26 +129,37 @@ async function getContractNames(addressItems: IAddressItem[]): Promise<IAddressI
 }
 
 export const Popup = () => {
-  const [addressItems] = usePromise<IAddressItem[]>(getAddresses, [] )
-  const [addressesWithNames] = usePromise<IAddressItem[]>(getAddressesWithNames, [] )
+  const [addressItemsUnnamed] = usePromise<IAddressItem[]>(getAddressesWithNames, [] )
+  const [addressItemsNamed, addressItemsLoading] = usePromise<IAddressItem[]>(getAddressesWithNames, [] )
+  const [addressItems, setAddressItems] = useState<IAddressItem[]>([])
   const [showAll, setShowAll] = useState(false)
 
-  // TODO: Not displaying addresses with names immediately after first load
+  useEffect(() => {
+    
+    if (addressItemsNamed) {
+      console.log("named saved", addressItemsNamed.length)
+      setAddressItems(addressItemsNamed)
+    } else if (addressItemsUnnamed) {
+      console.log("unnamed saved", addressItemsUnnamed.length)
+      setAddressItems(addressItemsUnnamed)
+    }
+  }, [addressItemsUnnamed, addressItemsNamed])
+  
   return (
     <section id="popup">
-      <button onClick={() => setShowAll(!showAll)}>{showAll ? "Hide unnamed" : "Show all"}</button>
-      {!addressesWithNames ? addressItems && addressItems.map((i, index) => {
-        return <AddressItem key={index} addressItem={i}/>
-      })
-      :
-        addressesWithNames.filter(i => i.name).length === 0 ? 
-        <div>No named addresses detected</div> 
-        :
-        addressesWithNames.filter(i => i.name).map((i, index) => {
-          return <AddressItem key={index} addressItem={i}/>
-        })
-    }
-    {!addressItems && <div>Something went wrong</div>}
+      {addressItemsLoading ? <div>Loading</div> :
+        addressItems &&
+        <div>
+          <button onClick={() => setShowAll(!showAll)}>{showAll ? "Hide unnamed" : "Show all"}</button>
+          {showAll ? addressItems.map((i, index) => {
+            return <AddressItem key={index} addressItem={i}/>
+          })
+          :
+          addressItems && addressItems.filter(i => i.name).map((i, index) => {
+            return <AddressItem key={index} addressItem={i}/>
+          })}
+        </div> 
+      }
     </section>
   );
 };
