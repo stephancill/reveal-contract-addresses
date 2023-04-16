@@ -60,18 +60,13 @@
   },
 
   "background": {
-    "scripts": [
-      "js/background.bundle.js"
-    ]
+    "scripts": ["js/background.bundle.js"]
   },
 
-  "content_scripts": [{
-    "matches": [
-      "http://*/*",
-      "https://*/*"
-    ],
-    "js": [
-      "js/contentScript.bundle.js"
-    ]
-  }]
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["js/contentScript.bundle.js"]
+    }
+  ]
 }

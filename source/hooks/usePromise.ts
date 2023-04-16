@@ -10,18 +10,18 @@ export default function usePromise<T>(f: () => Promise<T>, deps: any[]): [T | un
     setIsLoading(true)
 
     f().then(
-      r => {
+      (r) => {
         if (subscribed) {
           setIsLoading(false)
           setResult(r)
         }
       },
-      e => {
+      (e) => {
         if (subscribed) {
           setIsLoading(false)
           setError(e)
         }
-      }
+      },
     )
 
     return function cleanup() {
